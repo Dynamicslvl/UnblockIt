@@ -61,7 +61,7 @@ class GameLoader:
         self.LOADER["win"] = pygame.mixer.Sound("audio/win.wav")
         self.LOADER["block_placed"] = pygame.mixer.Sound("audio/block_placed.wav")
         self.LOADER["ignore"] = pygame.mixer.Sound("audio/ignore.wav")
-        pygame.mixer.music.load("audio/game_theme.mp3")
+        pygame.mixer.music.load("audio/game_theme.wav")
 
     @staticmethod
     def save_game():
