@@ -7,7 +7,7 @@ class LevelController:
 
     def __init__(self, row, column):
         self.maxLevel: int = 13
-        self.level = 13
+        self.level = 1
         self.row = row
         self.column = column
         self.load_data()
@@ -25,6 +25,9 @@ class LevelController:
 
     def increase_level(self, i):
         self.level += i
+        if self.level > GameLoader.PDATA.level_reached:
+            GameLoader.PDATA.level_reached = self.level
+            GameLoader.save_game()
         GameController.clear_layer(Layer.block)
         self.load_level(self.level)
         Global.GAME_STATE = GameState.playing
@@ -35,9 +38,11 @@ class LevelController:
         Global.GAME_STATE = GameState.playing
 
     def load_level(self, level):
-        self.level = level
         self.board.set_active(True)
         self.border.set_active(True)
+        if level > self.maxLevel:
+            return
+        self.level = level
         Global.MATRIX = numpy.zeros((self.row, self.column))
         list_block = self.LEVEL_DATA[level-1]
         # print(list_block)

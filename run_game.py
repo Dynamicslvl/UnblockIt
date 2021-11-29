@@ -4,7 +4,7 @@ from script.Level import *
 from script.Entity import *
 from script.Global import *
 from script.GameController import *
-from script.UI import UserInterface
+from script.UI import *
 
 
 game_running = True # The game has started running
@@ -13,6 +13,9 @@ pygame.init()
 
 # Game loader
 GameLoader() # Must call fisrt
+
+# Background
+Background((0, 0))
 
 # Game controller
 GameController()

@@ -1,3 +1,5 @@
+import pygame.mixer
+
 import Level
 from script.GameController import *
 
@@ -37,6 +39,8 @@ class Button(GameObject):
     def is_in_mouse_up(self):
         if self.is_below_mouse_position() and GameController.mouse_up:
             if pygame.mouse.get_cursor() != pygame.cursors.broken_x:
+                if GameLoader.PDATA.play_sound:
+                    pygame.mixer.Sound.play(GameLoader.LOADER["ui_click"])
                 GameController.mouse_up = False
                 return True
         return False
@@ -50,7 +54,23 @@ class Button(GameObject):
     def is_below_mouse_position(self):
         rect = self._image.get_rect()
         rect.topleft = self._position
-        return rect.collidepoint(pygame.mouse.get_pos())
+        if rect.collidepoint(pygame.mouse.get_pos()):
+            self._image.set_alpha(150)
+            return True
+        else:
+            self._image.set_alpha(255)
+            return False
+
+
+class Background(GameObject):
+
+    def __init__(self, position=(0, 0)):
+        super(Background, self).__init__(position)
+        self._image = GameLoader.LOADER["spr_background"]
+        self._image = pygame.transform.scale(self._image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+
+    def update(self):
+        pass
 
 
 class UserInterface:
@@ -76,10 +96,10 @@ class MainMenu(GameObject):
     def __init__(self, position):
         super(MainMenu, self).__init__(position)
         self._layer = Layer.UI
-        self.name = Button((225, SCREEN_HEIGHT / 2 - 250), 0, "name.png")
-        self.btn_play = Button((SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 - 85), 0, "btn_play.png")
-        self.btn_options = Button((SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2), 0, "btn_options.png")
-        self.btn_credits = Button((SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 + 85), 0, "btn_credits.png")
+        self.name = Button((SCREEN_WIDTH / 2 - 225, SCREEN_HEIGHT / 2 - 200), 0, "name.png")
+        self.btn_play = Button((SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 - 50), 0, "btn_play.png")
+        self.btn_options = Button((SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 + 35), 0, "btn_options.png")
+        self.btn_credits = Button((SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 + 120), 0, "btn_credits.png")
 
     def update(self):
         if self.btn_play.is_in_mouse_up():
@@ -113,27 +133,40 @@ class OptionsMenu(GameObject):
         self.btn_txt_music = Button((music_x, music_y), 0, "btn_txt_music.png")
         self.btn_txt_sound = Button((sound_x, sound_y), 0, "btn_txt_sound.png")
 
-        self.btn_sound = Button((sound_x + 220, sound_y), 1)
-        self.btn_music = Button((music_x + 220, music_y), 1)
-        self.btn_sound.set_image(GameLoader.LOADER["spr_sound"])
-        self.btn_music.set_image(GameLoader.LOADER["spr_music"])
+        if GameLoader.PDATA.play_sound:
+            self.btn_sound = Button((sound_x + 220, sound_y), 1, "btn_sound.png")
+        else:
+            self.btn_sound = Button((sound_x + 220, sound_y), 0, "btn_no_sound.png")
+
+        if GameLoader.PDATA.play_music:
+            self.btn_music = Button((music_x + 220, music_y), 1, "btn_music.png")
+        else:
+            self.btn_music = Button((music_x + 220, music_y), 0, "btn_no_music.png")
 
     def update(self):
         if self.btn_sound.is_in_mouse_up():
             if self.btn_sound.id == 1:
+                GameLoader.PDATA.play_sound = False
                 self.btn_sound.set_image(GameLoader.LOADER["spr_no_sound"])
                 self.btn_sound.id = 0
             else:
+                GameLoader.PDATA.play_sound = True
+                pygame.mixer.Sound.play(GameLoader.LOADER["ui_click"])
                 self.btn_sound.set_image(GameLoader.LOADER["spr_sound"])
                 self.btn_sound.id = 1
         if self.btn_music.is_in_mouse_up():
             if self.btn_music.id == 1:
+                GameLoader.PDATA.play_music = False
+                pygame.mixer.music.stop()
                 self.btn_music.set_image(GameLoader.LOADER["spr_no_music"])
                 self.btn_music.id = 0
             else:
+                GameLoader.PDATA.play_music = True
+                pygame.mixer.music.play(-1)
                 self.btn_music.set_image(GameLoader.LOADER["spr_music"])
                 self.btn_music.id = 1
         if self.btn_save.is_in_mouse_up():
+            GameLoader.save_game()
             UserInterface.main_menu.set_active(True)
             self.set_active(False)
 
@@ -151,6 +184,7 @@ class CreditsMenu(GameObject):
     def __init__(self, position):
         super(CreditsMenu, self).__init__(position)
         self._layer = Layer.UI
+        self.infor = Button((SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2 - 50), 0,  "infor.png")
         self.about = Button((SCREEN_WIDTH / 2 - 150, SCREEN_HEIGHT / 2 - 200), 0,  "about.png")
         self.btn_home = Button((SCREEN_WIDTH / 2 - 30, SCREEN_HEIGHT - 100), 0, "btn_home.png")
 
@@ -161,6 +195,7 @@ class CreditsMenu(GameObject):
 
     def set_active(self, boolean):
         super(CreditsMenu, self).set_active(boolean)
+        self.infor.set_active(boolean)
         self.about.set_active(boolean)
         self.btn_home.set_active(boolean)
 
@@ -177,32 +212,31 @@ class LevelMenu(GameObject):
         self.btn_home = Button((SCREEN_WIDTH/2 - 30, SCREEN_HEIGHT - 100), 0, "btn_home.png")
         for i in range(0, 4):
             for j in range(0, 8):
-                self.level_buttons.append(Button((self._position[0] + d*j, self._position[1] + d*i), 8*i+j+1))
+                self.level_buttons.append(Button((self._position[0] + d*j, self._position[1] + d*i), 8*i+j+1,
+                                                 "level_lock.png"))
         self.level_buttons[0].lock = False
 
     def update(self):
         if self.btn_home.is_in_mouse_up():
             UserInterface.main_menu.set_active(True)
             self.set_active(False)
-        for i in range(0, 32):
-            if self.level_buttons[i].lock:
-                self.level_buttons[i].set_image(GameLoader.LOADER["spr_level_lock"])
-            else:
-                if self.level_buttons[i].text == "":
-                    self.level_buttons[i].text = str(self.level_buttons[i].id).zfill(2)
-                    self.level_buttons[i].text_offset = (35, 13)
-                    self.level_buttons[i].set_image(GameLoader.LOADER["spr_level_unlock"])
-                if self.level_buttons[i].is_in_mouse_up():
+        for button in self.level_buttons:
+            if not button.lock:
+                if button.text == "":
+                    button.text = str(button.id).zfill(2)
+                    button.text_offset = (35, 13)
+                    button.set_image(pygame.image.load("image/level_unlock.png"))
+                if button.is_in_mouse_up():
                     self.set_active(False)
                     UserInterface.play_menu.set_active(True)
-                    self.level.load_level(self.level_buttons[i].id)
+                    self.level.load_level(button.id)
 
     def set_active(self, boolean):
         super(LevelMenu, self).set_active(boolean)
         self.btn_home.set_active(boolean)
         for i in range(0, 32):
             self.level_buttons[i].set_active(boolean)
-            if self.level_buttons[i].id <= self.level.level:
+            if self.level_buttons[i].id <= GameLoader.PDATA.level_reached:
                 self.level_buttons[i].lock = False
 
 
@@ -227,3 +261,4 @@ class GameplayMenu(GameObject):
         super(GameplayMenu, self).set_active(boolean)
         self.btn_home.set_active(boolean)
         self.btn_reload.set_active(boolean)
+

@@ -7,7 +7,7 @@ import Global
 class Board(GameObject):
 
     def __init__(self, position):
-        self._image = pygame.transform.scale(GameLoader.LOADER["spr_background"],
+        self._image = pygame.transform.scale(GameLoader.LOADER["spr_board_background"],
                                              (BOARD_SIZE * SQUARE_SIZE, BOARD_SIZE * SQUARE_SIZE + 30))
         self._image = pygame.transform.rotate(self._image, 90)
         super(Board, self).__init__(position)
@@ -136,6 +136,8 @@ class WoodBlock(GameObject):
         else:
             self.fill_matrix(1)
             pygame.mouse.set_cursor(*pygame.cursors.arrow)
+            if GameLoader.PDATA.play_sound:
+                pygame.mixer.Sound.play(GameLoader.LOADER["block_placed"])
 
     def update(self):
         m_x, m_y = pygame.mouse.get_pos()
@@ -296,6 +298,8 @@ class SlipBlock(GameObject):
             self._moving = False
             self.fill_matrix(1)
             pygame.mouse.set_cursor(*pygame.cursors.arrow)
+            if GameLoader.PDATA.play_sound:
+                pygame.mixer.Sound.play(GameLoader.LOADER["block_placed"])
 
     def update(self):
         m_x, m_y = pygame.mouse.get_pos()
@@ -443,13 +447,16 @@ class TargetBlock(GameObject):
         else:
             self.fill_matrix(1)
             pygame.mouse.set_cursor(*pygame.cursors.arrow)
+            if GameLoader.PDATA.play_sound:
+                pygame.mixer.Sound.play(GameLoader.LOADER["block_placed"])
 
     def check_winning(self):
         if self._position[0] >= BOARD_POSITION[0] + (BOARD_SIZE - self._size[0]) * SQUARE_SIZE \
                 and Global.GAME_STATE == GameState.playing:
             self.set_holding(False)
             Global.GAME_STATE = GameState.winning
-            print("LEVEL COMPLETE!")
+            if GameLoader.PDATA.play_sound:
+                pygame.mixer.Sound.play(GameLoader.LOADER['win'])
 
         if Global.GAME_STATE == GameState.winning:
             self._position[0] += 15
@@ -502,8 +509,23 @@ class SteelBlock(GameObject):
                     return
                 Global.MATRIX[grid_pos[0] + i][grid_pos[1] + j] = value
 
+    def bound(self):
+        x1 = self._position[0]
+        y1 = self._position[1]
+        x2 = self._position[0] + self._size[0] * SQUARE_SIZE
+        y2 = self._position[1] + self._size[1] * SQUARE_SIZE
+        return x1, y1, x2, y2
+
+    def is_below_mouse_position(self):
+        m_x, m_y = pygame.mouse.get_pos()
+        bound = list(self.bound())
+        if bound[0] < m_x < bound[2] and bound[1] < m_y < bound[3]:
+            return True
+        return False
+
     def update(self):
-        pass
+        if GameController.mouse_down and self.is_below_mouse_position():
+            pygame.mixer.Sound.play(GameLoader.LOADER["ignore"])
 
     @staticmethod
     def block_image(size):
