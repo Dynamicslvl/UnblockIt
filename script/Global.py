@@ -40,6 +40,8 @@ SQUARE_SIZE = 90
 SHADOW_SIZE = 5
 SCREEN_SIZE = (SCREEN_WIDTH, SCREEN_HEIGHT)
 BLOCK_MOVE_SPEED = 4
+MAX_LEVEL = 32
+ENCODE = 255
 
 # Screen Init
 spr_icon = pygame.image.load("image/icon.png")
@@ -59,7 +61,7 @@ delta_time = 0.0
 getTicksLastFrame = 0.0
 GAME_STATE = GameState.playing
 MATRIX: numpy.ndarray = numpy.zeros((0, 0))
-
+OLD_MATRIX: numpy.ndarray = numpy.zeros((0, 0))
 
 # Global Methods
 

@@ -6,7 +6,8 @@ class LevelController:
     LEVEL_DATA: list[list[list[int]]] = []
 
     def __init__(self, row, column):
-        self.maxLevel: int = 13
+        self.ui = None
+        self.lvl_select = None
         self.level = 1
         self.row = row
         self.column = column
@@ -25,23 +26,32 @@ class LevelController:
 
     def increase_level(self, i):
         self.level += i
+
+        GameController.clear_layer(Layer.block)
+        Global.GAME_STATE = GameState.playing
+
+        if self.level > Global.MAX_LEVEL:
+            self.level = Global.MAX_LEVEL
+            self.ui.set_active(False)
+            self.lvl_select.set_active(True)
+            self.hide_board()
+            return
+
         if self.level > GameLoader.PDATA.level_reached:
             GameLoader.PDATA.level_reached = self.level
-            GameLoader.save_game()
-        GameController.clear_layer(Layer.block)
+
         self.load_level(self.level)
-        Global.GAME_STATE = GameState.playing
 
     def restart_level(self):
         GameController.clear_layer(Layer.block)
-        self.load_level(self.level)
         Global.GAME_STATE = GameState.playing
+        self.load_level(self.level)
 
     def load_level(self, level):
+        GameLoader.save_game()
         self.board.set_active(True)
         self.border.set_active(True)
-        if level > self.maxLevel:
-            return
+        self.ui.set_active(True)
         self.level = level
         Global.MATRIX = numpy.zeros((self.row, self.column))
         list_block = self.LEVEL_DATA[level-1]
@@ -58,8 +68,8 @@ class LevelController:
 
     def load_data(self):
         with open("level/data.txt") as data:
-            self.maxLevel = int(next(data))
-            for i in range(self.maxLevel):
+            Global.MAX_LEVEL = int(next(data))
+            for i in range(Global.MAX_LEVEL):
                 n = int(next(data))
                 list_block = []
                 for j in range(n):

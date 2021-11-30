@@ -3,6 +3,7 @@ import pickle
 
 import pygame.image
 
+import Global
 from script.Global import *
 from abc import ABC, abstractmethod
 
@@ -11,12 +12,14 @@ class PlayerData:
     level_reached = 1
     play_sound = True
     play_music = True
+    best_moves = ""
 
     def __init__(self, lvl, ps, pm):
         self.level_reached = lvl
         self.play_sound = ps
         self.play_music = pm
-
+        for i in range(Global.MAX_LEVEL):
+            self.best_moves += chr(Global.ENCODE)
 
 """
     Loading all sprites that using in high frequency
@@ -53,6 +56,8 @@ class GameLoader:
         self.LOADER["spr_no_music"] = pygame.image.load("image/btn_no_music.png")
         self.LOADER["spr_level_lock"] = pygame.image.load("image/level_lock.png")
         self.LOADER["spr_level_unlock"] = pygame.image.load("image/level_unlock.png")
+        self.LOADER["spr_level_completed"] =\
+            pygame.transform.scale(pygame.image.load("image/level_completed.png"), (602, 95))
         self.load_audios()
         self.load_game()
 
@@ -126,6 +131,7 @@ class GameController:
     OBJECT: list[GameObject] = []
     mouse_down = False
     mouse_up = False
+    matrix_changed = False
     old_mouse_position = (0, 0)
 
     def __init__(self):
@@ -141,7 +147,11 @@ class GameController:
     @staticmethod
     def render():
         for obj in GameController.OBJECT:
-            obj.render()
+            if obj.get_layer() != Layer.UI:
+                obj.render()
+        for obj in GameController.OBJECT:
+            if obj.get_layer() == Layer.UI:
+                obj.render()
 
     @staticmethod
     def clear_layer(layer):

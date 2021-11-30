@@ -130,11 +130,14 @@ class WoodBlock(GameObject):
     def set_holding(self, value):
         self._is_holding = value
         if self._is_holding:
+            Global.OLD_MATRIX = Global.MATRIX.copy()
             self.fill_matrix(0)
             pygame.mouse.set_cursor(*pygame.cursors.broken_x)
             self.calculate_limit()
         else:
             self.fill_matrix(1)
+            if not numpy.array_equal(Global.MATRIX, Global.OLD_MATRIX):
+                GameController.matrix_changed = True
             pygame.mouse.set_cursor(*pygame.cursors.arrow)
             if GameLoader.PDATA.play_sound:
                 pygame.mixer.Sound.play(GameLoader.LOADER["block_placed"])
@@ -292,11 +295,14 @@ class SlipBlock(GameObject):
     def set_holding(self, value):
         self._is_holding = value
         if self._is_holding:
+            Global.OLD_MATRIX = Global.MATRIX.copy()
             self.fill_matrix(0)
             pygame.mouse.set_cursor(*pygame.cursors.broken_x)
         else:
             self._moving = False
             self.fill_matrix(1)
+            if not numpy.array_equal(Global.MATRIX, Global.OLD_MATRIX):
+                GameController.matrix_changed = True
             pygame.mouse.set_cursor(*pygame.cursors.arrow)
             if GameLoader.PDATA.play_sound:
                 pygame.mixer.Sound.play(GameLoader.LOADER["block_placed"])
@@ -441,11 +447,14 @@ class TargetBlock(GameObject):
     def set_holding(self, value):
         self._is_holding = value
         if self._is_holding:
+            Global.OLD_MATRIX = Global.MATRIX.copy()
             self.fill_matrix(0)
             pygame.mouse.set_cursor(*pygame.cursors.broken_x)
             self.calculate_limit()
         else:
             self.fill_matrix(1)
+            if not numpy.array_equal(Global.MATRIX, Global.OLD_MATRIX):
+                GameController.matrix_changed = True
             pygame.mouse.set_cursor(*pygame.cursors.arrow)
             if GameLoader.PDATA.play_sound:
                 pygame.mixer.Sound.play(GameLoader.LOADER["block_placed"])

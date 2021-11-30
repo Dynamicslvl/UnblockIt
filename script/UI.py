@@ -1,5 +1,6 @@
 import pygame.mixer
 
+import GameController
 import Level
 from script.GameController import *
 
@@ -31,7 +32,8 @@ class Button(GameObject):
         if self.text != "" and self._active:
             text = self.font.render(self.text, True, self.text_color)
             screen.blit(text,
-                        (self._position[0] + self.text_offset[0] - text.get_width()/2, self._position[1] + self.text_offset[1]))
+                        (self._position[0] + self.text_offset[0] - text.get_width()/2,
+                         self._position[1] + self.text_offset[1]))
 
     def set_image(self, image):
         self._image = image
@@ -93,6 +95,7 @@ class UserInterface:
 
 
 class MainMenu(GameObject):
+
     def __init__(self, position):
         super(MainMenu, self).__init__(position)
         self._layer = Layer.UI
@@ -121,6 +124,7 @@ class MainMenu(GameObject):
 
 
 class OptionsMenu(GameObject):
+
     def __init__(self, position):
         super(OptionsMenu, self).__init__(position)
         self._layer = Layer.UI
@@ -181,6 +185,7 @@ class OptionsMenu(GameObject):
 
 
 class CreditsMenu(GameObject):
+
     def __init__(self, position):
         super(CreditsMenu, self).__init__(position)
         self._layer = Layer.UI
@@ -208,6 +213,7 @@ class LevelMenu(GameObject):
         self._position = position
         self._layer = Layer.UI
         self.level = level
+        self.level.lvl_select = self
         d = 90
         self.btn_home = Button((SCREEN_WIDTH/2 - 30, SCREEN_HEIGHT - 100), 0, "btn_home.png")
         for i in range(0, 4):
@@ -228,23 +234,62 @@ class LevelMenu(GameObject):
                     button.set_image(pygame.image.load("image/level_unlock.png"))
                 if button.is_in_mouse_up():
                     self.set_active(False)
-                    UserInterface.play_menu.set_active(True)
                     self.level.load_level(button.id)
+                    UserInterface.play_menu.set_active(True)
 
     def set_active(self, boolean):
         super(LevelMenu, self).set_active(boolean)
         self.btn_home.set_active(boolean)
-        for i in range(0, 32):
-            self.level_buttons[i].set_active(boolean)
-            if self.level_buttons[i].id <= GameLoader.PDATA.level_reached:
-                self.level_buttons[i].lock = False
+        for button in self.level_buttons:
+            button.set_active(boolean)
+            if button.id <= GameLoader.PDATA.level_reached:
+                button.lock = False
 
 
 class GameplayMenu(GameObject):
+
     def __init__(self, position, level):
         super(GameplayMenu, self).__init__(position)
         self._layer = Layer.UI
         self.level = level
+        self.move = 0
+        self.level.ui = self
+
+        # LVL COMPLETED
+        self.level_completed = Button((298, 250), 0)
+        self.level_completed.set_image(GameLoader.LOADER["spr_level_completed"])
+        self.level_completed.set_active(False)
+
+        # LEVEL Area
+        self.level_display = Button((35, 50), 0, "round_border.png")
+        self.level_display.text = "LEVEL"
+        self.level_display.text_color = (255, 255, 255)
+        self.level_display.text_offset = (120, 10)
+        self.level_text = Button((35, 100), 0)
+        self.level_text.set_font_size(50)
+        self.level_text.text_color = (255, 255, 255)
+        self.level_text.text_offset = (120, 0)
+
+        # BEST Area
+        self.best_display = Button((35, 190), 0, "round_border.png")
+        self.best_display.text = "BEST"
+        self.best_display.text_color = (255, 255, 255)
+        self.best_display.text_offset = (120, 10)
+        self.best_text = Button((35, 240), 0)
+        self.best_text.set_font_size(50)
+        self.best_text.text_color = (255, 255, 255)
+        self.best_text.text_offset = (120, 0)
+
+        # CURR Area
+        self.curr_display = Button((35, 330), 0, "round_border.png")
+        self.curr_display.text = "CURR"
+        self.curr_display.text_color = (255, 255, 255)
+        self.curr_display.text_offset = (120, 10)
+        self.curr_text = Button((35, 380), 0)
+        self.curr_text.set_font_size(50)
+        self.curr_text.text_color = (255, 255, 255)
+        self.curr_text.text_offset = (120, 0)
+
         self.btn_home = Button(position, 0, "btn_home.png")
         self.btn_reload = Button((position[0] + 85, position[1]), 0, "btn_reload.png")
 
@@ -256,9 +301,35 @@ class GameplayMenu(GameObject):
             self.set_active(False)
         if self.btn_reload.is_in_mouse_up():
             self.level.restart_level()
+        if GameController.matrix_changed:
+            GameController.matrix_changed = False
+            self.move += 1
+            self.curr_text.text = str(self.move).zfill(2)
+        if Global.GAME_STATE == GameState.winning:
+            self.level_completed.set_active(True)
+            best = ord(GameLoader.PDATA.best_moves[self.level.level - 1]) - ENCODE
+            if best == 0 or best > self.move:
+                list_best_moves = list(GameLoader.PDATA.best_moves)
+                list_best_moves[self.level.level - 1] = chr(self.move + ENCODE)
+                GameLoader.PDATA.best_moves = "".join(list_best_moves)
+                self.best_text.text = str(self.move).zfill(2)
 
     def set_active(self, boolean):
         super(GameplayMenu, self).set_active(boolean)
         self.btn_home.set_active(boolean)
         self.btn_reload.set_active(boolean)
-
+        self.curr_text.set_active(boolean)
+        self.level_text.set_active(boolean)
+        self.best_text.set_active(boolean)
+        self.best_display.set_active(boolean)
+        self.level_display.set_active(boolean)
+        self.curr_display.set_active(boolean)
+        self.move = 0
+        self.level_completed.set_active(False)
+        self.level_text.text = str(self.level.level).zfill(2)
+        self.curr_text.text = str(self.move).zfill(2)
+        best = ord(GameLoader.PDATA.best_moves[self.level.level - 1]) - ENCODE
+        if best != 0:
+            self.best_text.text = str(best).zfill(2)
+        else:
+            self.best_text.text = "--"
